@@ -1,0 +1,110 @@
+---
+title: "blblm package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  eval = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+
+```
+
+
+# Introduction
+
+
+The blblm package performed Generalized and Linear Regression with Little Bag of Bootstraps for m subsamples and B bootstraps. Also, it provides parallelization and high performance interface Rcpp which uses a version of lm based on RcppArmadillo instead of basic lm function. And for GLM model, basiclly, all of glm family models could be used in this package, however, only gaussian  models are tested here.
+
+
+
+# My work
+
+## Basic implementation of blblm package
+
+I firstly complete all of the left parts in the package to make the package run without errors. For an example, the usage of the package could be shown as below:
+
+
+```{r}
+library(blblm)
+fit <- blblm(mpg ~ wt * hp, data = mtcars, m = 3, B = 100)
+coef(fit)
+
+confint(fit, c("wt", "hp"))
+
+sigma(fit)
+
+sigma(fit, confidence = TRUE)
+
+predict(fit, data.frame(wt = c(2.5, 3), hp = c(150, 170)))
+
+predict(fit, data.frame(wt = c(2.5, 3), hp = c(150, 170)), confidence = TRUE)
+
+```
+
+
+## parallelization
+
+The first thing to improve the package is using parallelization from the furrr package by future_map, while the basic function is from the purrr package using map.  The usage of  parallelization is as below by set the  parallel to be TRUE:
+
+
+```{r}
+fit <- blblm(mpg ~ wt * hp, data = mtcars, m = 3, B = 100, parallel = TRUE)
+coef(fit)
+```
+
+Also, we can test which is fast, basiclly the one using parallelization is much faster, and in this package, the number of clusters is default to be 4.
+
+
+
+## C++
+
+
+The second thing to improve the package is using Rcpp to implement the lm function base on the  RcppArmadillo package which mainly uses arma namespace and several useful functions to do the task. The fitted object has lots of attributes returned including coefficients, stderr, rank and so on which is similar with the fitted object from base lm function. The usage of the C++ version of the lm function is already treated as default, so its usage is like the old version that:
+
+
+```{r}
+fit <- blblm(mpg ~ wt * hp, data = mtcars, m = 3, B = 100)
+coef(fit)
+```
+
+
+## GLM
+
+The old package mainly focus on the blblm function, but the new one also adds an exported function blbglm, it is very similar with the blblm function, the inputs are almost the same except is accepts a family parameter, and the object from blbglm is assigned to blbglm class,  the S3 methods for the  blbglm class should be similar with those for blblm. In this package, only gaussian model is tested, however, it is a good start point to add other families. The example is:
+
+```{r}
+fit <- blbglm(cyl ~ wt * hp, family = gaussian, data = mtcars, m = 3, B = 100)
+coef(fit)
+```
+
+Also, the GLM model has a parallelization version as below:
+
+```{r}
+fit <- blbglm(cyl ~ wt * hp, family = gaussian, data = mtcars, m = 3, B = 100, parallel = TRUE)
+coef(fit)
+```
+
+
+
+# Conclusion
+
+I mainly focused on the improments in using parallelization, c++ and GLM models. However, there are lots of other things to improve, for example, read files as a whole data, add more c++ functions and add more types of GLM models or even more advanced methods. These would be studied in future.
+
+
+
+
+
+
+
+
+
